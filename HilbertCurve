@@ -1,14 +1,16 @@
-var DIM = 2, ORDER = 32;
-var g_mask = [32, 16, 8, 4, 2, 1];//automate this
-var Hcode = function() {
-	this.hcode = new Array(DIM);
+var DIM = 2, ORDER = 32, g_mask = [];
+POPULATE_G_MASK:
+for(var i = Math.log2(ORDER); i >= 0; i --) {
+    g_mask.push(Math.pow(2, i));
+}
+var Hcode = function(hcode) {
+	this.hcode = hcode;
 };
-var Point = new Hcode();
-//hello
 
 /*===========================================================*/
-/* 							get_P 							 */
+/*                         get_P                             */
 /*===========================================================*/
+
 var get_P = function(i, H) {
 	var element = i / ORDER, P, temp1, temp2;
 	P = H.hcode[element];
@@ -26,8 +28,9 @@ var get_P = function(i, H) {
 	}
 	return P;
 };
+
 /*===========================================================*/
-/* 						get_P2 (inverse)					 */
+/*                         get_P2                             */
 /*===========================================================*/
 
 var get_P2 = function(S) {
@@ -39,8 +42,9 @@ var get_P2 = function(S) {
 	}
 	return P;
 };
+
 /*===========================================================*/
-/* 							get_J 							 */
+/*                         get_J                             */
 /*===========================================================*/
 
 var get_J = function(P) {
@@ -56,7 +60,7 @@ var get_J = function(P) {
 };
 
 /*===========================================================*/
-/* 							get_T 							 */
+/*                         get_T                             */
 /*===========================================================*/
 
 var get_T = function(P) {
@@ -64,15 +68,119 @@ var get_T = function(P) {
 };
 
 /*===========================================================*/
-/* 						get_tS_tT							 */
+/*                      get_tS_tT                            */
 /*===========================================================*/
+
 var get_tS_tT = function(xJ, val) {
 	var retval = val, temp1, temp2;
 	if(xJ % DIM !== 0) {
 		temp1 = val >>> xJ % DIM;
-		temp2 = val << DIM - xJ % DIM;
+		temp2 = val < DIM - xJ % DIM;
 		retval = temp1 | temp2;
-		retval &= (1 << DIM) - 1; //really: ((U_int) 1 << DIM) cast
+		retval &= (1 << DIM) - 1; //really: ((U_int) 1 <<< DIM) cast
 	}
 	return retval;
+};
+
+/*===========================================================*/
+/*                          H_decode                         */
+/*===========================================================*/
+
+var H_decode = function(H) {
+    var mask = 1 << ORDER - 1,
+        A, W = 0, S, tS, T, tT, J, P = 0, xJ;
+    var pt = new Hcode([0]), i = ORDER * DIM - DIM, j;
+    
+    P = get_P(i, J);
+    J = get_J(P);
+    xJ = J - 1;
+    A = S = tS = P ^ P / 2;
+    T = get_T(P);
+    tT = T;
+    
+    //-----distribute bits to coordinates -----//
+    for(j = DIM - 1; P > 0; P >>>=1, j --) {
+        if(P & 1) {
+            pt.hcode[j] |= mask;
+        }
+    }
+    for(i -= DIM, mask >>>= 1; i >= 0; i -= DIM, mask >>>= 1) {
+        P = get_P(i, H);
+        S = P ^ P / 2;
+        tS = get_tS_tT(xJ, S);
+        W ^= tT;
+        A = W ^ tS;
+
+        for(j = DIM - 1; A > 0; A >>>= 1, j --) {
+            if(A & 1) {
+                pt.hcode[j] |= mask;
+            }
+        }
+        if(i > 0) {
+            T = get_T(P);
+            tT = get_tS_tT(xJ, T);
+            J = get_J(P);
+            xJ += J - 1;
+        }
+    }
+    return pt;
+};
+
+/*===========================================================*/
+/*                      H_encode                             */
+/*===========================================================*/
+
+/* For mapping from DIM dimensions to one dimension */
+var H_encode = function(pt) {
+    var mask = 1 << ORDER - 1, element, A, W = 0, S, tS, T, tT, J, P = 0, xJ;
+    var h = new Hcode([0]);
+    var i = ORDER * DIM - DIM, j;
+    for(j = A = 0; j < DIM; j ++) {
+        if(pt.hcode[j] & mask) {
+            A |= g_mask[j];
+        }
+    }
+    S = tS = A;
+    P = get_P2(S);
+    
+    /* add in DIM bits to hcode */
+    element = i / ORDER;
+    if(i % ORDER > ORDER - DIM) {
+        h.hcode[element] |= P << i % ORDER;
+        h.hcode[element + 1] |= P >>> ORDER - i % ORDER;
+    } else {
+        h.hcode[element] |= P << i - element * ORDER;
+    }
+    
+    J = get_J(P);
+    xJ = J - 1;
+    T = get_T(P);
+    tT = T;
+    for(i -= DIM, mask >>>= 1; i >= 0; i -= DIM, mask >>>= 1) {
+        for(j = A = 0; j < DIM; j ++) {
+            if(pt.hcode[j] & mask) {
+                A |= g_mask[j];   
+            }
+        }
+        W ^= tT;
+        tS = A ^ W;
+        S = get_tS_tT(xJ, tS);
+        P = get_P2(S);
+        
+        /* add in DIM bits to hcode */
+        element = i / ORDER;
+        if(i % ORDER > ORDER - DIM) {
+            h.hcode[element] |= P << i % ORDER;
+            h.hcode[element + 1] |= P >>> ORDER - i % ORDER;
+        } else {
+             h.hcode[element] |= P << i - element * ORDER;
+        }
+        if(i > 0) {
+            T = get_T(P);
+            tT = get_tS_tT(xJ, T);
+            J = get_J(P);
+            xJ += J - 1;
+        }
+    }
+    return h;
 };
