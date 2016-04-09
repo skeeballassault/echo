@@ -1,4 +1,37 @@
-var DIM = 2, ORDER = 32, g_mask = [];
+<!DOCTYPE html>
+<html> 
+ <head>
+    <title>Fractals Template</title> 
+</head>
+<body>
+	<p align="center"> 
+	<!--This draws the Canvas on the webpage -->
+	  <canvas id="CANVAS"></canvas> 
+	</p>
+</body>
+
+<!-- Run all the JavaScript stuff -->
+<!-- Include the Processing.JS library -->
+<script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
+
+<script>
+    var sketchProc = function(processingInstance) {
+     with (processingInstance) {
+     	var width = 400, height = 400;
+        size(width, height); 
+        
+	/** ALL PROCESSING.JS CODE GOES BELOW HERE **/
+	
+
+
+
+
+
+
+
+
+
+	var DIM = 2, ORDER = 32, g_mask = [];
 POPULATE_G_MASK:
 for(var i = Math.log2(ORDER); i >= 0; i --) {
     g_mask.push(Math.pow(2, i));
@@ -184,3 +217,26 @@ var H_encode = function(pt) {
     }
     return h;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+    }};
+
+    // Get the canvas that Processing-JS will use
+    var canvas = document.getElementById("CANVAS"); 
+    // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
+    var processingInstance = new Processing(canvas, sketchProc); 
+ </script>
+
+</html>
