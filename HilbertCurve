@@ -4,6 +4,7 @@ var Hcode = function() {
 	this.hcode = new Array(DIM);
 };
 var Point = new Hcode();
+//hello
 
 /*===========================================================*/
 /* 							get_P 							 */
