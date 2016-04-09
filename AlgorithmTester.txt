@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html> 
+ <head>
+    <title>Fractals Template</title> 
+</head>
+<body>
+	<p align="center"> 
+	<!--This draws the Canvas on the webpage -->
+	  <canvas id="CANVAS"></canvas> 
+	</p>
+</body>
+
+<!-- Run all the JavaScript stuff -->
+<!-- Include the Processing.JS library -->
+<script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
+
+<script>
+    var sketchProc = function(processingInstance) {
+     with (processingInstance) {
+     	var width = 400, height = 400;
+        size(width, height); 
+        
+	/** ALL PROCESSING.JS CODE GOES BELOW HERE **/
+	
+
+
+
+
+
+
+
+
+
+	var DIM = 2, ORDER = 32, g_mask = [];
+POPULATE_G_MASK:
+for(var i = Math.log2(ORDER); i >= 0; i --) {
+    g_mask.push(Math.pow(2, i));
+}
+var Hcode = function(hcode) {
+	this.hcode = hcode;
+};
+
+/*===========================================================*/
+/*                         get_P                             */
+/*===========================================================*/
+
+var get_P = function(i, H) {
+	var element = i / ORDER, P, temp1, temp2;
+	P = H.hcode[element];
+	if( i % ORDER > ORDER - DIM) {
+		temp1 = H.hcode[element + 1];
+		P >>>= i % ORDER;
+		temp1 <<= ORDER - i % ORDER;
+		P |= temp1;
+	} else {
+		P >>>= i % ORDER; /* P is a DIM bit hcode */
+	}
+	/* the & masks out spurious highbit values */
+	if(DIM < ORDER) {
+		P &= (1 << DIM) -1;
+	}
+	return P;
+};
+
+/*===========================================================*/
+/*                         get_P2                             */
+/*===========================================================*/
+
+var get_P2 = function(S) {
+	var i, P = S & g_mask[0];
+	for(i = 1; i < DIM; i ++) {
+		if(S & g_mask[i] ^ (P >>> 1) & g_mask[i]) {
+			P |= g_mask[i];
+		}
+	}
+	return P;
+};
+
+/*===========================================================*/
+/*                         get_J                             */
+/*===========================================================*/
+
+var get_J = function(P) {
+	var i, J = DIM;
+	for(i = 1; i < DIM; i ++) {
+		if((P >>> 1 & 1) === (P & 1)) { continue; } 
+		else { break; }
+	}
+	if(i !== DIM) {
+		J -= i;
+	}
+	return J;
+};
+
+/*===========================================================*/
+/*                         get_T                             */
+/*===========================================================*/
+
+var get_T = function(P) {
+	return (P < 3)? 0 : ((P % 2 === 0)? (P - 1) ^ (P - 1) / 2 : (P - 2) ^ (P - 2) / 2);
+};
+
+/*===========================================================*/
+/*                      get_tS_tT                            */
+/*===========================================================*/
+
+var get_tS_tT = function(xJ, val) {
+	var retval = val, temp1, temp2;
+	if(xJ % DIM !== 0) {
+		temp1 = val >>> xJ % DIM;
+		temp2 = val < DIM - xJ % DIM;
+		retval = temp1 | temp2;
+		retval &= (1 << DIM) - 1; //really: ((U_int) 1 <<< DIM) cast
+	}
+	return retval;
+};
+
+/*===========================================================*/
+/*                          H_decode                         */
+/*===========================================================*/
+
+var H_decode = function(H) {
+    var mask = 1 << ORDER - 1,
+        A, W = 0, S, tS, T, tT, J, P = 0, xJ;
+    var pt = new Hcode([0]), i = ORDER * DIM - DIM, j;
+    
+    P = get_P(i, J);
+    J = get_J(P);
+    xJ = J - 1;
+    A = S = tS = P ^ P / 2;
+    T = get_T(P);
+    tT = T;
+    
+    //-----distribute bits to coordinates -----//
+    for(j = DIM - 1; P > 0; P >>>=1, j --) {
+        if(P & 1) {
+            pt.hcode[j] |= mask;
+        }
+    }
+    for(i -= DIM, mask >>>= 1; i >= 0; i -= DIM, mask >>>= 1) {
+        P = get_P(i, H);
+        S = P ^ P / 2;
+        tS = get_tS_tT(xJ, S);
+        W ^= tT;
+        A = W ^ tS;
+
+        for(j = DIM - 1; A > 0; A >>>= 1, j --) {
+            if(A & 1) {
+                pt.hcode[j] |= mask;
+            }
+        }
+        if(i > 0) {
+            T = get_T(P);
+            tT = get_tS_tT(xJ, T);
+            J = get_J(P);
+            xJ += J - 1;
+        }
+    }
+    return pt;
+};
+
+/*===========================================================*/
+/*                      H_encode                             */
+/*===========================================================*/
+
+/* For mapping from DIM dimensions to one dimension */
+var H_encode = function(pt) {
+    var mask = 1 << ORDER - 1, element, A, W = 0, S, tS, T, tT, J, P = 0, xJ;
+    var h = new Hcode([0]);
+    var i = ORDER * DIM - DIM, j;
+    for(j = A = 0; j < DIM; j ++) {
+        if(pt.hcode[j] & mask) {
+            A |= g_mask[j];
+        }
+    }
+    S = tS = A;
+    P = get_P2(S);
+    
+    /* add in DIM bits to hcode */
+    element = i / ORDER;
+    if(i % ORDER > ORDER - DIM) {
+        h.hcode[element] |= P << i % ORDER;
+        h.hcode[element + 1] |= P >>> ORDER - i % ORDER;
+    } else {
+        h.hcode[element] |= P << i - element * ORDER;
+    }
+    
+    J = get_J(P);
+    xJ = J - 1;
+    T = get_T(P);
+    tT = T;
+    for(i -= DIM, mask >>>= 1; i >= 0; i -= DIM, mask >>>= 1) {
+        for(j = A = 0; j < DIM; j ++) {
+            if(pt.hcode[j] & mask) {
+                A |= g_mask[j];   
+            }
+        }
+        W ^= tT;
+        tS = A ^ W;
+        S = get_tS_tT(xJ, tS);
+        P = get_P2(S);
+        
+        /* add in DIM bits to hcode */
+        element = i / ORDER;
+        if(i % ORDER > ORDER - DIM) {
+            h.hcode[element] |= P << i % ORDER;
+            h.hcode[element + 1] |= P >>> ORDER - i % ORDER;
+        } else {
+             h.hcode[element] |= P << i - element * ORDER;
+        }
+        if(i > 0) {
+            T = get_T(P);
+            tT = get_tS_tT(xJ, T);
+            J = get_J(P);
+            xJ += J - 1;
+        }
+    }
+    return h;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+    }};
+
+    // Get the canvas that Processing-JS will use
+    var canvas = document.getElementById("CANVAS"); 
+    // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
+    var processingInstance = new Processing(canvas, sketchProc); 
+ </script>
+
+</html>
