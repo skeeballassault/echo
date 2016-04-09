@@ -1,3 +1,19 @@
+/**
+ Bitwise Operators Documentation
+ 
+ a & b : Returns a one in each bit psoition for which the corresponding bits of both operands are ones (AND)
+ 
+ a | b : Returns a one in each bit position for which the corresonding bits of either or both operands are ones (OR)
+ 
+ a ^ b : Returns a one in each bit position for which the corresponding bits of either but not both operands are ones (XOR)
+ 
+ ~ a   : Inverts the bits of its operand (NOT)
+ 
+ a << b: Shifts a in binary representation b (< 32) bits to the left, shifting in zeroes from the right (LEFT SHIFT)
+ 
+ a >>>b: Shifts a in binary representation b (< 32) bits to the right, discarding bits of shifted off, and shifting in zeroes from the left (ZERO-FILL RIGHT SHIFT)
+ 
+ * */
 var DIM = 2, ORDER = 32, g_mask = [];
 POPULATE_G_MASK:
 for(var i = Math.log2(ORDER); i >= 0; i --) {
@@ -184,3 +200,5 @@ var H_encode = function(pt) {
     }
     return h;
 };
+
+var points = new Hcode();
