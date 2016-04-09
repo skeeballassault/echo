@@ -31,7 +31,7 @@
 
 
 
-	var DIM = 2, ORDER = 32, g_mask = [];
+var DIM = 2, ORDER = 32, g_mask = [];
 POPULATE_G_MASK:
 for(var i = Math.log2(ORDER); i >= 0; i --) {
     g_mask.push(Math.pow(2, i));
