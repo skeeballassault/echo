@@ -1,34 +1,8 @@
-<!DOCTYPE html>
-<html> 
- <head>
-    <title>Output</title> 
-</head>
-<body>
-	<p align="center"> 
-	<!--This draws the Canvas on the webpage -->
-	  <canvas id="CANVAS"></canvas> 
-	</p>
-</body>
-
-
-<!-- Run all the JavaScript stuff -->
-<!-- Include the Processing.JS library -->
-<script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
-
-<script>
-    var sketchProc = function(processingInstance) {
-     with (processingInstance) {
-     	var width = 400, height = 400;
-        size(width, height); 
-        
-	/** ALL PROCESSING.JS CODE GOES BELOW HERE **/
-	
-var S = "";
 var N = 9;
 var Turtle = function(x0, y0, a0) {
     this.pos = new PVector(x0, y0);
     this.angle = a0;
-    S += "[0, 0],";
+    print("[0, 0],");
 };
 Turtle.prototype.turnLeft = function(delta) {
     this.angle += delta;
@@ -38,7 +12,7 @@ Turtle.prototype.goForward = function(step) {
     var oldPos = this.pos.get();
     this.pos.add(step * Math.cos(this.angle * Math.PI / 180), step * Math.sin(this.angle * Math.PI / 180));
     line(oldPos.x, 20 + oldPos.y, this.pos.x, 20 + this.pos.y);
-    S += "[" + Math.round(this.pos.x) + ", " + Math.round(this.pos.y) + "],";
+    print("[" + Math.round(this.pos.x) + ", " + Math.round(this.pos.y) + "],");
 };
 
 var turtle;
@@ -83,17 +57,4 @@ var H = {
     }
 };
 H.set();
-console.log(S);
-
-
-
-
-    }};
-
-    // Get the canvas that Processing-JS will use
-    var canvas = document.getElementById("CANVAS"); 
-    // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
-    var processingInstance = new Processing(canvas, sketchProc); 
- </script>
-
-</html>
+println("");
