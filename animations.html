@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html> 
+ <head>
+    <title>Hilbert Animations</title> 
+</head>
+<body>
+	<p align="center"> 
+	<!--This draws the Canvas on the webpage -->
+	  <canvas id="CANVAS"></canvas> 
+	</p>
+</body>
+
+
+<!-- Run all the JavaScript stuff -->
+<!-- Include the Processing.JS library -->
+<script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
+
+<script>
+    var sketchProc = function(processingInstance) {
+     with (processingInstance) {
+     	var width = 675, height = 675;
+        size(width, height); 
+        
+	/** ALL PROCESSING.JS CODE GOES BELOW HERE **/
+	frameRate(max);
+var ORDER = 7,
+    Hilbert_Points = [];
+    
+/** Stepper object **/
+var Harold = {
+    pos : new PVector(0, 0),
+    angle: 0,
+    stepIndex: 1,
+    /**
+        @description turn Harold left by delta degrees
+        @param delta {double}: angle by which Harold rotates
+        @return void
+    */
+    rotate: function(delta) {
+        this.angle += delta;
+    },
+    
+    /**
+        @description
+        @param step {double}: magnitude of translation
+        @return void
+    */
+    translate: function(step) {
+        var oldPos = this.pos.get();
+        this.pos.add(Math.round(step * Math.cos(this.angle * Math.PI / 180)), 
+                     Math.round(step * Math.sin(this.angle * Math.PI / 180)) );
+        //Hilbert_Points[this.stepIndex ++] = [this.pos.x, this.pos.y];
+        Hilbert_Points[this.stepIndex ++] = this.pos.get();
+    },
+};
+
+/** Hilbert object **/
+var Hilbert = {
+    stepper: Harold,
+    
+    /**
+        @description recursive method 1, using a combination of rotations and translations 
+        @param n {int}: decreasing from ORDER to 0
+        @return void
+    */
+    f1: function(n) {
+        if(n === 0) { return; }
+        this.stepper.rotate(90);
+        this.f2(n - 1);
+        this.stepper.translate(1);
+        this.stepper.rotate(-90);
+        this.f1(n-1);
+        this.stepper.translate(1);
+        this.f1(n - 1);
+        this.stepper.rotate(-90);
+        this.stepper.translate(1);
+        this.f2(n - 1);
+        this.stepper.rotate(90);
+    },
+    /**
+        @description recursive method 2, using a combination of rotations and translations 
+        @param n {int}: decreasing from ORDER to 0
+        @return void
+    */
+    f2: function(n) {
+        if (n === 0) { return; }
+        this.stepper.rotate(-90);
+        this.f1(n - 1);
+        this.stepper.translate(1);
+        this.stepper.rotate(90);
+        this.f2(n - 1);
+        this.stepper.translate(1);
+        this.f2(n - 1);
+        this.stepper.rotate(90);
+        this.stepper.translate(1);
+        this.f1(n - 1);
+        this.stepper.rotate(-90);
+    },
+    /**
+        @description initiates recursive process on Hilbert curve of order ORDER
+        @param none
+        @return void
+    */
+    run: function() {
+        Hilbert_Points.push(Harold.pos.get());
+        // Hilbert_Points.push([Harold.pos.x, Harold.pos.y]);
+        this.f1(ORDER);  
+    },
+};
+
+//Run Hilbert curve
+Hilbert.run();
+
+PVector.prototype.point = function() {
+    point(this.x, this.y);  
+};
+PVector.prototype.curveVertex = function() {
+    curveVertex(this.x, this.y);
+};
+PVector.prototype.vertex = function() {
+    vertex(this.x, this.y);
+};
+PVector.line = function(u, v) {
+    line(u.x, u.y, v.x, v.y);
+};
+
+var L = Math.pow(2, ORDER) - 1;
+for(var i = 0; i < Hilbert_Points.length; i ++) {
+    Hilbert_Points[i].mult(width / L * 0.9);
+    Hilbert_Points[i].y = (height - Hilbert_Points[i].y);
+}
+translate(width * 0.05, -height * 0.05);
+
+strokeWeight(2); stroke(255); strokeCap(ROUND); noFill();
+
+var I = 0;
+colorMode(HSB);
+background(0);
+draw = function() {
+    if(I < Hilbert_Points.length - 1) {
+        stroke(map(I, 0, Hilbert_Points.length, 0, 255), 255, 255);
+        PVector.line(Hilbert_Points[I], Hilbert_Points[I + 1]);
+        I++;
+    }
+    
+};
+    }};
+
+    // Get the canvas that Processing-JS will use
+    var canvas = document.getElementById("CANVAS"); 
+    // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
+    var processingInstance = new Processing(canvas, sketchProc); 
+ </script>
+
+</html>
